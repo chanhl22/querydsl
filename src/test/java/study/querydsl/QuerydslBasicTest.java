@@ -1,5 +1,7 @@
 package study.querydsl;
 
+import com.querydsl.core.NonUniqueResultException;
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -14,6 +16,7 @@ import study.querydsl.entity.Team;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static study.querydsl.entity.QMember.member;
 
 @SpringBootTest
@@ -101,6 +104,50 @@ public class QuerydslBasicTest {
                 .fetch();
 
         assertThat(result1.size()).isEqualTo(1);
+    }
+
+    @Test
+    void resultFetch() {
+        //List
+        List<Member> fetch = queryFactory
+                .selectFrom(member)
+                .fetch();
+        assertThat(fetch.size()).isEqualTo(4);
+
+        //단 건
+        assertThatThrownBy(() -> queryFactory
+                .selectFrom(member)
+                .fetchOne())
+                .isInstanceOf(NonUniqueResultException.class);
+
+        //처음 한 건 조회
+        Member findMember2 = queryFactory
+                .selectFrom(member)
+                .fetchFirst();
+        assertThat(findMember2.getUsername()).isEqualTo("member1");
+
+        //페이징에서 사용
+        QueryResults<Member> results = queryFactory
+                .selectFrom(member)
+                .offset(1)
+                .limit(2)
+                .fetchResults();
+
+        long total = results.getTotal();
+        List<Member> members = results.getResults();
+        long offset = results.getOffset();
+        long limit = results.getLimit();
+
+        assertThat(total).isEqualTo(4);
+        assertThat(members).hasSize(2);
+        assertThat(offset).isEqualTo(1);
+        assertThat(limit).isEqualTo(2);
+
+        //count 쿼리로 변경
+        long count = queryFactory
+                .selectFrom(member)
+                .fetchCount();
+        assertThat(count).isEqualTo(4);
     }
 
 }
