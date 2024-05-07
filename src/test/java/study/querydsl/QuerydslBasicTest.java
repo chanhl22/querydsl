@@ -632,7 +632,7 @@ public class QuerydslBasicTest {
     }
 
     private BooleanExpression usernameEq(String usernameCond) {
-        return usernameCond!= null ? member.username.eq(usernameCond) : null;
+        return usernameCond != null ? member.username.eq(usernameCond) : null;
     }
 
     private BooleanExpression ageEq(Integer ageCond) {
@@ -643,4 +643,42 @@ public class QuerydslBasicTest {
         return usernameEq(usernameCond).and(ageEq(ageCond));
     }
 
+    @DisplayName("쿼리 한번으로 대량 데이터 수정")
+    @Test
+    void bulkUpdate() {
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        em.flush();
+        em.clear();
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
+
+    @DisplayName("기존 숫자에 1 더하기")
+    @Test
+    void bulkAdd() {
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .execute();
+    }
+
+    @DisplayName("쿼리 한번으로 대량 데이터 삭제")
+    @Test
+    void bulkDelete() {
+        long count = queryFactory
+                .delete(member)
+                .where(member.age.gt(18))
+                .execute();
+    }
 }
